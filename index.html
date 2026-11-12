@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Logiqo · Bimbel Online UTBK & CPNS</title>
+<meta name="description" content="Bimbel online Logiqo: tryout UTBK SNBT dan SKD CPNS dengan pembahasan, materi, latihan soal, dan kelas online.">
+<meta name="theme-color" content="#000000">
+<!-- Pratinjau saat link dibagikan di WhatsApp / media sosial -->
+<meta property="og:title" content="Logiqo · Bimbel Online UTBK & CPNS">
+<meta property="og:description" content="Tryout UTBK SNBT & SKD CPNS dengan pembahasan, materi, latihan soal, dan kelas online setiap malam.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23000'/%3E%3Cpath d='M10 8v15h9' stroke='%23fff' stroke-width='3.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='22.5' cy='11.5' r='3.5' fill='%23F2C14E'/%3E%3C/svg%3E">
+<style>
+  /* Halaman ini hanya "bingkai": aplikasi Logiqo (Google Apps Script) ditampilkan penuh di dalamnya.
+     Karena dibuka di dalam bingkai situs lain, Google tidak menampilkan banner
+     "This application was created by a Google Apps Script user". */
+  html, body { margin: 0; height: 100%; background: #F5F5F6; overflow: hidden; }
+  #app { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #F5F5F6; }
+  #muat { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+          background: #F5F5F6; color: #000; font: 600 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; transition: opacity .3s; z-index: 1; }
+  #muat.selesai { opacity: 0; pointer-events: none; }
+  .merek { display: flex; align-items: center; gap: 10px; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+  .merek b { color: #8A6500; }
+  .putar { width: 28px; height: 28px; border: 3px solid #E4E4E7; border-top-color: #8A6500; border-radius: 50%; animation: putar .8s linear infinite; }
+  .lambat { font-weight: 400; color: #52525B; font-size: 13.5px; text-align: center; max-width: 300px; display: none; padding: 0 16px; }
+  .lambat a { color: #8A6500; }
+  @keyframes putar { to { transform: rotate(360deg); } }
+  @media (prefers-color-scheme: dark) {
+    html, body, #app, #muat { background: #000; }
+    #muat { color: #fff; }
+    .merek b, .lambat a { color: #F2C14E; }
+    .putar { border-color: #27272A; border-top-color: #F2C14E; }
+    .lambat { color: #A1A1AA; }
+  }
+  @media (prefers-reduced-motion: reduce) { .putar { animation-duration: 2.4s; } }
+</style>
+</head>
+<body>
+<div id="muat" role="status" aria-live="polite">
+  <div class="merek">
+    <svg width="38" height="38" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#000"/><path d="M10 8v15h9" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="22.5" cy="11.5" r="3.5" fill="#F2C14E"/></svg>
+    <span>Logi<b>qo</b></span>
+  </div>
+  <div class="putar" aria-hidden="true"></div>
+  <p class="lambat" id="lambat">Memuat Logiqo agak lama. Periksa koneksi internet, atau <a id="langsung" href="#" target="_top">buka langsung</a>.</p>
+</div>
+<iframe id="app" title="Logiqo" allow="clipboard-write; fullscreen; web-share"></iframe>
+<noscript><p style="padding:24px;font-family:sans-serif">Aktifkan JavaScript untuk membuka Logiqo.</p></noscript>
+<script>
+  // ======== SATU-SATUNYA YANG PERLU DIGANTI ========
+  // URL aplikasi web dari Apps Script: Terapkan → Kelola deployment → salin "URL aplikasi web" (berakhiran /exec).
+  var URL_APLIKASI = 'https://script.google.com/macros/s/AKfycbyZ6nGSqK18l2QOARg0q1vUJbaWi902y8b5IKYc5RZDgehsUCYbEF1mi10ve2NT9yvWYg/exec';
+  // ==================================================
+
+  // Panel admin: buka alamat website ini dengan ?admin atau #admin (mis. https://nama.github.io/logiqo/?admin).
+  var admin = /(^|[?&])admin(=|&|$)/.test(location.search.slice(1)) || location.hash === '#admin';
+  var src = URL_APLIKASI + (admin ? '?admin' : '');
+  var frame = document.getElementById('app'), muat = document.getElementById('muat');
+  document.getElementById('langsung').href = src;
+  frame.addEventListener('load', function () { muat.classList.add('selesai'); });
+  // Apps Script biasanya butuh 1–3 detik; bila lebih dari 12 detik, tampilkan bantuan.
+  setTimeout(function () { if (!muat.classList.contains('selesai')) document.getElementById('lambat').style.display = 'block'; }, 12000);
+  frame.src = src;
+</script>
+</body>
+</html>
