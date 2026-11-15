@@ -34,6 +34,20 @@
     .lambat { color: #A1A1AA; }
   }
   @media (prefers-reduced-motion: reduce) { .putar { animation-duration: 2.4s; } }
+  /* Jendela "Masuk dengan Google" (tombol resmi Google harus berada di halaman ini, bukan di dalam aplikasi Apps Script) */
+  #glayar { position: fixed; inset: 0; z-index: 5; display: none; align-items: center; justify-content: center; padding: 16px;
+            background: rgba(0,0,0,.55); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #glayar.buka { display: flex; }
+  .gkotak { width: 100%; max-width: 360px; background: #fff; color: #111; border-radius: 16px; padding: 22px 20px 16px;
+            display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+  .gkotak h2 { margin: 0; font-size: 18px; }
+  .gkotak p { margin: 0; color: #52525B; font-size: 13.5px; }
+  #gtombol { min-height: 44px; display: flex; justify-content: center; }
+  #gbatal { font: inherit; font-weight: 600; background: none; border: 0; color: #52525B; padding: 8px 14px; cursor: pointer; border-radius: 8px; }
+  #gbatal:hover { background: #F4F4F5; }
+  @media (prefers-color-scheme: dark) {
+    .gkotak { background: #18181B; color: #fff; } .gkotak p, #gbatal { color: #A1A1AA; } #gbatal:hover { background: #27272A; }
+  }
 </style>
 </head>
 <body>
@@ -46,6 +60,14 @@
   <p class="lambat" id="lambat">Memuat Logiqo agak lama. Periksa koneksi internet, atau <a id="langsung" href="#" target="_top">buka langsung</a>.</p>
 </div>
 <iframe id="app" title="Logiqo" allow="clipboard-write; fullscreen; web-share"></iframe>
+<div id="glayar" role="dialog" aria-modal="true" aria-labelledby="gjudul">
+  <div class="gkotak">
+    <h2 id="gjudul">Masuk dengan Google</h2>
+    <p id="gket">Pilih akun Google kamu. Logiqo hanya menerima nama dan alamat email.</p>
+    <div id="gtombol"></div>
+    <button id="gbatal" type="button">Batal</button>
+  </div>
+</div>
 <noscript><p style="padding:24px;font-family:sans-serif">Aktifkan JavaScript untuk membuka Logiqo.</p></noscript>
 <script>
   // ======== SATU-SATUNYA YANG PERLU DIGANTI ========
@@ -62,6 +84,50 @@
   // Apps Script biasanya butuh 1–3 detik; bila lebih dari 12 detik, tampilkan bantuan.
   setTimeout(function () { if (!muat.classList.contains('selesai')) document.getElementById('lambat').style.display = 'block'; }, 12000);
   frame.src = src;
+
+  /* ===== Masuk dengan Google =====
+     Aplikasi (di dalam bingkai, alamat *.googleusercontent.com) menyapa halaman ini ("halo"). Halaman ini menjawab "siap",
+     sehingga tombol Google baru muncul bila aplikasi dibuka lewat website ini. Saat tombol ditekan, aplikasi mengirim Client ID;
+     halaman ini menampilkan tombol resmi Google, lalu mengirim kredensial (ID token) kembali ke aplikasi.
+     Server Logiqo memeriksa kredensial itu ke Google, jadi halaman ini tidak menyimpan apa pun. */
+  var glayar = document.getElementById('glayar'), gtombol = document.getElementById('gtombol'), gket = document.getElementById('gket');
+  var gSumber = null, gAsal = '', gsiMuat = null;
+  function dariAplikasi(e) { return /^https:\/\/[\w-]+(\.[\w-]+)*\.googleusercontent\.com$/.test(e.origin) || e.origin === 'https://script.google.com'; }
+  function kirim(pesan) { if (gSumber) gSumber.postMessage(pesan, gAsal); }
+  function tutupGoogle(batal) { glayar.classList.remove('buka'); gtombol.innerHTML = ''; if (batal) kirim({ logiqo: 'googleBatal' }); }
+  function muatGsi() {
+    if (window.google && google.accounts && google.accounts.id) return Promise.resolve();
+    if (!gsiMuat) gsiMuat = new Promise(function (ok, gagal) {
+      var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+      s.onload = ok; s.onerror = function () { gsiMuat = null; gagal(); }; document.head.appendChild(s);
+    });
+    return gsiMuat;
+  }
+  function bukaGoogle(clientId, daftar) {
+    glayar.classList.add('buka'); gtombol.innerHTML = '<span class="putar"></span>';
+    document.getElementById('gjudul').textContent = daftar ? 'Daftar dengan Google' : 'Masuk dengan Google';
+    gket.textContent = 'Pilih akun Google kamu. Logiqo hanya menerima nama dan alamat email.';
+    muatGsi().then(function () {
+      google.accounts.id.initialize({ client_id: clientId, ux_mode: 'popup', auto_select: false,
+        callback: function (r) { tutupGoogle(false); kirim({ logiqo: 'googleKred', kredensial: r.credential }); } });
+      gtombol.innerHTML = '';
+      google.accounts.id.renderButton(gtombol, { type: 'standard', theme: 'outline', size: 'large', shape: 'pill',
+        text: daftar ? 'signup_with' : 'signin_with', locale: 'id', width: 280 });
+    }, function () {
+      gtombol.innerHTML = ''; gket.textContent = 'Layanan Google gagal dimuat. Periksa koneksi internet, lalu tutup dan ulangi.';
+    });
+  }
+  document.getElementById('gbatal').addEventListener('click', function () { tutupGoogle(true); });
+  glayar.addEventListener('click', function (e) { if (e.target === glayar) tutupGoogle(true); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && glayar.classList.contains('buka')) tutupGoogle(true); });
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || typeof d !== 'object' || !dariAplikasi(e)) return;
+    if (d.logiqo === 'halo') { gSumber = e.source; gAsal = e.origin; kirim({ logiqo: 'siap' }); }
+    else if (d.logiqo === 'google' && e.source === gSumber && /^[\w-]+\.apps\.googleusercontent\.com$/.test(String(d.clientId || ''))) {
+      bukaGoogle(String(d.clientId), !!d.daftar);
+    }
+  });
 </script>
 </body>
 </html>
